@@ -7,6 +7,7 @@
     "add-repo": "tsx src/add-repo.ts",
     "list-repos": "tsx src/list-repos.ts",
     "typecheck": "tsc --noEmit",
+    "rate-limit": "tsx src/rate-limit.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -23,6 +24,7 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
+    "octokit": "^5.0.5",
     "pg": "^8.23.0"
   },
   "devDependencies": {

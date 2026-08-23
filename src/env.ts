@@ -10,4 +10,6 @@ function required(name: string): string {
 
 export const env = {
   databaseUrl: required("DATABASE_URL"),
+  githubAppId: required("GITHUB_APP_ID"),
+  githubAppPrivKey: required("GITHUB_APP_PRIVATE_KEY")
 };
