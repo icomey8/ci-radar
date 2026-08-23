@@ -28,9 +28,7 @@ async function main() {
     .returning();
 
   console.log(
-    inserted.length > 0
-      ? `Now watching ${owner}/${name}`
-      : `Already watching ${owner}/${name}`,
+    inserted.length > 0 ? `Now watching ${owner}/${name}` : `Already watching ${owner}/${name}`,
   );
 
   await pool.end();

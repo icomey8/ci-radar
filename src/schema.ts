@@ -1,4 +1,4 @@
-import { pgTable, integer, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, integer, text, timestamp, uniqueIndex, bigint } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -17,10 +17,23 @@ export const watchedRepos = pgTable(
     addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("watched_repos_user_owner_name_idx").on(
-      table.userId,
-      table.owner,
-      table.name,
-    ),
+    uniqueIndex("watched_repos_user_owner_name_idx").on(table.userId, table.owner, table.name),
   ],
 );
+
+export const jobAttempts = pgTable("job_attempts", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  watchedRepoId: integer("watched_repo_id")
+    .notNull()
+    .references(() => watchedRepos.id, { onDelete: "cascade" }),
+  githubJobId: bigint("github_job_id", { mode: "number" }).notNull().unique(),
+  githubRunId: bigint("github_run_id", { mode: "number" }).notNull(),
+  runAttempt: integer("run_attempt").notNull(),
+  workflowName: text("workflow_name").notNull(),
+  jobName: text("job_name").notNull(),
+  headSha: text("head_sha").notNull(),
+  conclusion: text("conclusion").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
+  ingestedAt: timestamp("ingested_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -2,25 +2,25 @@
   "name": "ci-radar",
   "version": "1.0.0",
   "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "type": "module",
   "scripts": {
     "seed": "tsx src/seed.ts",
     "add-repo": "tsx src/add-repo.ts",
     "list-repos": "tsx src/list-repos.ts",
+    "ingest": "tsx src/ingest.ts",
     "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck",
     "rate-limit": "tsx src/rate-limit.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "record-fixtures": "tsx src/record-fixtures.ts",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.22.0",
-      "onFail": "download"
-    }
-  },
-  "type": "module",
   "dependencies": {
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
@@ -28,10 +28,20 @@
     "pg": "^8.23.0"
   },
   "devDependencies": {
+    "@octokit/types": "^17.0.0",
     "@types/node": "^26.2.0",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.10",
+    "oxfmt": "^0.64.0",
+    "oxlint": "^1.79.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.22.0",
+      "onFail": "download"
+    }
   }
 }
