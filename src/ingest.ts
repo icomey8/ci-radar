@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db, pool } from "./db.js";
 import { fetchRunsWithJobs, installationIdForRepo, octokitForInstallation } from "./github.js";
 import { type NewJobAttempt, toJobAttemptRow } from "./job-attempt.js";
-import { jobAttempts, users, watchedRepos } from "./schema.js";
+import { jobAttempts, repos, users, watchedRepos } from "./schema.js";
 
 const BATCH_SIZE = 500;
 
@@ -28,23 +28,18 @@ async function main() {
     throw new Error("No user found. Run `pnpm seed` first.");
   }
 
-  const [repo] = await db
-    .select()
+  const [watched] = await db
+    .select({ repoId: repos.id })
     .from(watchedRepos)
-    .where(
-      and(
-        eq(watchedRepos.userId, user.id),
-        eq(watchedRepos.owner, owner),
-        eq(watchedRepos.name, name),
-      ),
-    )
+    .innerJoin(repos, eq(watchedRepos.repoId, repos.id))
+    .where(and(eq(watchedRepos.userId, user.id), eq(repos.owner, owner), eq(repos.name, name)))
     .limit(1);
 
-  if (!repo) {
+  if (!watched) {
     throw new Error(`Not watching ${owner}/${name}. Run \`pnpm add-repo ${owner}/${name}\` first.`);
   }
 
-  console.log(`Ingesting ${owner}/${name} (watched repo ${repo.id})`);
+  console.log(`Ingesting ${owner}/${name} (repo ${watched.repoId})`);
 
   const installationId = await installationIdForRepo(owner, name);
   const octoClient = await octokitForInstallation(installationId);
@@ -73,7 +68,7 @@ async function main() {
 
     for (const job of jobs) {
       jobsSeen += 1;
-      const row = toJobAttemptRow(run, job, repo.id);
+      const row = toJobAttemptRow(run, job, watched.repoId);
       if (row) {
         buffer.push(row);
       } else {

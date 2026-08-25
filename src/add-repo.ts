@@ -1,5 +1,6 @@
+import { and, eq } from "drizzle-orm";
 import { db, pool } from "./db.js";
-import { users, watchedRepos } from "./schema.js";
+import { repos, users, watchedRepos } from "./schema.js";
 
 function parseRepo(input: string | undefined): { owner: string; name: string } {
   if (!input) {
@@ -21,9 +22,18 @@ async function main() {
     throw new Error("No user found. Run `pnpm seed` first.");
   }
 
+  let [repo] = await db
+    .select()
+    .from(repos)
+    .where(and(eq(repos.owner, owner), eq(repos.name, name)))
+    .limit(1);
+  if (!repo) {
+    [repo] = await db.insert(repos).values({ owner, name }).returning();
+  }
+
   const inserted = await db
     .insert(watchedRepos)
-    .values({ userId: user.id, owner, name })
+    .values({ userId: user.id, repoId: repo!.id })
     .onConflictDoNothing()
     .returning();
 

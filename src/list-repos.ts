@@ -1,12 +1,16 @@
+import { eq } from "drizzle-orm";
 import { db, pool } from "./db.js";
-import { watchedRepos } from "./schema.js";
+import { repos, watchedRepos } from "./schema.js";
 
-const repos = await db.select().from(watchedRepos);
+const watched = await db
+  .select({ owner: repos.owner, name: repos.name })
+  .from(watchedRepos)
+  .innerJoin(repos, eq(watchedRepos.repoId, repos.id));
 
-if (repos.length === 0) {
+if (watched.length === 0) {
   console.log("No repos watched yet. Add one with `pnpm add-repo <owner>/<name>`.");
 } else {
-  for (const repo of repos) {
+  for (const repo of watched) {
     console.log(`${repo.owner}/${repo.name}`);
   }
 }

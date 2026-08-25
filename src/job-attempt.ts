@@ -9,14 +9,14 @@ export type NewJobAttempt = typeof jobAttempts.$inferInsert;
 export function toJobAttemptRow(
   run: WorkflowRun,
   job: WorkflowJob,
-  watchedRepoId: number,
+  repoId: number,
 ): NewJobAttempt | null {
   if (job.status !== "completed" || job.conclusion === null || job.completed_at === null) {
     return null;
   }
 
   return {
-    watchedRepoId,
+    repoId,
     githubJobId: job.id,
     githubRunId: run.id,
     runAttempt: job.run_attempt ?? 1,

@@ -18,7 +18,7 @@ test("maps a completed job onto a row", () => {
   const row = toJobAttemptRow(first.run, firstJob, 7);
 
   assert.deepEqual(row, {
-    watchedRepoId: 7,
+    repoId: 7,
     githubJobId: firstJob.id,
     githubRunId: first.run.id,
     runAttempt: firstJob.run_attempt ?? 1,

@@ -5,6 +5,17 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const repos = pgTable(
+  "repos",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    owner: text("owner").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("repos_owner_name_idx").on(table.owner, table.name)],
+);
+
 export const watchedRepos = pgTable(
   "watched_repos",
   {
@@ -12,20 +23,19 @@ export const watchedRepos = pgTable(
     userId: integer("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    owner: text("owner").notNull(),
-    name: text("name").notNull(),
+    repoId: integer("repo_id")
+      .notNull()
+      .references(() => repos.id, { onDelete: "cascade" }),
     addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
-    uniqueIndex("watched_repos_user_owner_name_idx").on(table.userId, table.owner, table.name),
-  ],
+  (table) => [uniqueIndex("watched_repos_user_repo_idx").on(table.userId, table.repoId)],
 );
 
 export const jobAttempts = pgTable("job_attempts", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  watchedRepoId: integer("watched_repo_id")
+  repoId: integer("repo_id")
     .notNull()
-    .references(() => watchedRepos.id, { onDelete: "cascade" }),
+    .references(() => repos.id, { onDelete: "cascade" }),
   githubJobId: bigint("github_job_id", { mode: "number" }).notNull().unique(),
   githubRunId: bigint("github_run_id", { mode: "number" }).notNull(),
   runAttempt: integer("run_attempt").notNull(),
