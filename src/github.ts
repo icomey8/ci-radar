@@ -38,6 +38,12 @@ export async function installationIdForRepo(owner: string, repo: string): Promis
   return data.id;
 }
 
+/** An Octokit authenticated for whichever installation covers this repo. */
+export async function octokitForRepo(owner: string, repo: string): Promise<InstallationOctokit> {
+  const installationId = await installationIdForRepo(owner, repo);
+  return octokitForInstallation(installationId);
+}
+
 export function shouldFetchJobs(run: WorkflowRun, storedUpdatedAt: Date | undefined): boolean {
   if (!storedUpdatedAt) return true;
   return new Date(run.updated_at).getTime() > storedUpdatedAt.getTime();

@@ -1,7 +1,8 @@
 import { and, eq, gte } from "drizzle-orm";
 import { db, pool } from "../db.js";
 import { defaultRankConfig, rank, type RankAttempt, type RankConfig } from "../rank.js";
-import { jobAttempts, repos, users, watchedRepos } from "../schema.js";
+import { jobAttempts, repos, watchedRepos } from "../schema.js";
+import { requireUser } from "./common.js";
 
 /** All attempts for one repo inside the lookback window, in the shape `rank()` wants. */
 async function grabAttempts(
@@ -21,10 +22,7 @@ async function grabAttempts(
 }
 
 async function main() {
-  const [user] = await db.select().from(users).limit(1);
-  if (!user) {
-    throw new Error("No user found. Run `pnpm seed` first.");
-  }
+  const user = await requireUser();
 
   const watched = await db
     .select({ repoId: repos.id, owner: repos.owner, name: repos.name })

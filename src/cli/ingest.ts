@@ -4,20 +4,13 @@ import {
   coreRateLimit,
   fetchJobsForRun,
   fetchRuns,
-  installationIdForRepo,
-  octokitForInstallation,
+  octokitForRepo,
   shouldFetchJobs,
 } from "../github.js";
 import type { Octokit } from "octokit";
 import { type NewJobAttempt, toJobAttemptRow } from "../job-attempt.js";
-import {
-  ingestedRuns,
-  jobAttempts,
-  repos,
-  resourceValidators,
-  users,
-  watchedRepos,
-} from "../schema.js";
+import { ingestedRuns, jobAttempts, resourceValidators } from "../schema.js";
+import { parseOwnerRepo, requireUser, requireWatchedRepo } from "./common.js";
 
 const BATCH_SIZE = 500;
 const RUNS_LIST = "runs-list";
@@ -30,50 +23,23 @@ async function printRateLimit(octoClient: Octokit) {
 function parseRepoFlag(argv: string[]): { owner: string; name: string } {
   const index = argv.indexOf("--repo");
   const value = index === -1 ? undefined : argv[index + 1];
-  if (!value) {
-    throw new Error("Usage: pnpm ingest --repo <owner>/<name>");
-  }
-  const parts = value.split("/");
-  const [owner, name] = parts;
-  if (parts.length !== 2 || !owner || !name) {
-    throw new Error(`Expected <owner>/<name>, got "${value}"`);
-  }
-  return { owner, name };
+  return parseOwnerRepo(value, "Usage: pnpm ingest --repo <owner>/<name>");
 }
 
 async function main() {
   const { owner, name } = parseRepoFlag(process.argv.slice(2));
 
-  const [user] = await db.select().from(users).limit(1);
-  if (!user) {
-    throw new Error("No user found. Run `pnpm seed` first.");
-  }
+  const user = await requireUser();
+  const repoId = await requireWatchedRepo(user.id, owner, name);
 
-  const [watched] = await db
-    .select({ repoId: repos.id })
-    .from(watchedRepos)
-    .innerJoin(repos, eq(watchedRepos.repoId, repos.id))
-    .where(and(eq(watchedRepos.userId, user.id), eq(repos.owner, owner), eq(repos.name, name)))
-    .limit(1);
+  console.log(`Ingesting ${owner}/${name} (repo ${repoId})`);
 
-  if (!watched) {
-    throw new Error(`Not watching ${owner}/${name}. Run \`pnpm add-repo ${owner}/${name}\` first.`);
-  }
-
-  console.log(`Ingesting ${owner}/${name} (repo ${watched.repoId})`);
-
-  const installationId = await installationIdForRepo(owner, name);
-  const octoClient = await octokitForInstallation(installationId);
+  const octoClient = await octokitForRepo(owner, name);
 
   const [validator] = await db
     .select({ etag: resourceValidators.etag })
     .from(resourceValidators)
-    .where(
-      and(
-        eq(resourceValidators.repoId, watched.repoId),
-        eq(resourceValidators.resource, RUNS_LIST),
-      ),
-    )
+    .where(and(eq(resourceValidators.repoId, repoId), eq(resourceValidators.resource, RUNS_LIST)))
     .limit(1);
 
   const listed = await fetchRuns(owner, name, octoClient, { etag: validator?.etag ?? null });
@@ -88,7 +54,7 @@ async function main() {
   const storedRuns = await db
     .select({ githubRunId: ingestedRuns.githubRunId, updatedAt: ingestedRuns.updatedAt })
     .from(ingestedRuns)
-    .where(eq(ingestedRuns.repoId, watched.repoId));
+    .where(eq(ingestedRuns.repoId, repoId));
 
   const storedUpdatedAtByRunId = new Map(storedRuns.map((row) => [row.githubRunId, row.updatedAt]));
 
@@ -137,7 +103,7 @@ async function main() {
 
     for (const job of jobs) {
       jobsSeen += 1;
-      const row = toJobAttemptRow(run, job, watched.repoId);
+      const row = toJobAttemptRow(run, job, repoId);
       if (row) {
         buffer.push(row);
       } else {
@@ -146,7 +112,7 @@ async function main() {
     }
 
     fetchedRuns.push({
-      repoId: watched.repoId,
+      repoId,
       githubRunId: run.id,
       updatedAt: new Date(run.updated_at),
     });
@@ -162,7 +128,7 @@ async function main() {
   if (listed.etag) {
     await db
       .insert(resourceValidators)
-      .values({ repoId: watched.repoId, resource: RUNS_LIST, etag: listed.etag })
+      .values({ repoId, resource: RUNS_LIST, etag: listed.etag })
       .onConflictDoUpdate({
         target: [resourceValidators.repoId, resourceValidators.resource],
         set: { etag: listed.etag },

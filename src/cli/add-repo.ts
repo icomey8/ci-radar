@@ -1,26 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { db, pool } from "../db.js";
-import { repos, users, watchedRepos } from "../schema.js";
-
-function parseRepo(input: string | undefined): { owner: string; name: string } {
-  if (!input) {
-    throw new Error("Usage: pnpm add-repo <owner>/<name>");
-  }
-  const parts = input.split("/");
-  const [owner, name] = parts;
-  if (parts.length !== 2 || !owner || !name) {
-    throw new Error(`Expected <owner>/<name>, got "${input}"`);
-  }
-  return { owner, name };
-}
+import { repos, watchedRepos } from "../schema.js";
+import { parseOwnerRepo, requireUser } from "./common.js";
 
 async function main() {
-  const { owner, name } = parseRepo(process.argv[2]);
+  const { owner, name } = parseOwnerRepo(process.argv[2], "Usage: pnpm add-repo <owner>/<name>");
 
-  const [user] = await db.select().from(users).limit(1);
-  if (!user) {
-    throw new Error("No user found. Run `pnpm seed` first.");
-  }
+  const user = await requireUser();
 
   let [repo] = await db
     .select()

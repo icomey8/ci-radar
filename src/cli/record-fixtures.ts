@@ -6,8 +6,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import {
   fetchJobsForRun,
   fetchRuns,
-  installationIdForRepo,
-  octokitForInstallation,
+  octokitForRepo,
   type WorkflowJob,
   type WorkflowRun,
 } from "../github.js";
@@ -41,8 +40,7 @@ function scrub(recorded: RunWithJobs[]): RunWithJobs[] {
 }
 
 async function main() {
-  const installationId = await installationIdForRepo(OWNER, REPO);
-  const octokit = await octokitForInstallation(installationId);
+  const octokit = await octokitForRepo(OWNER, REPO);
 
   const listed = await fetchRuns(OWNER, REPO, octokit, { maxNumOfRuns: MAX_RUNS });
   if (listed.notModified) {

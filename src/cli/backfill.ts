@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import pLimit from "p-limit";
 import { db, pool } from "../db.js";
 import {
@@ -6,21 +6,14 @@ import {
   countRuns,
   fetchJobsForRun,
   fetchRuns,
-  installationIdForRepo,
-  octokitForInstallation,
+  octokitForRepo,
   shouldFetchJobs,
   type WorkflowRun,
 } from "../github.js";
 import { type NewJobAttempt, toJobAttemptRow } from "../job-attempt.js";
-import {
-  backfillProgress,
-  ingestedRuns,
-  jobAttempts,
-  repos,
-  users,
-  watchedRepos,
-} from "../schema.js";
+import { backfillProgress, ingestedRuns, jobAttempts } from "../schema.js";
 import type { Octokit } from "octokit";
+import { parseOwnerRepo, requireUser, requireWatchedRepo } from "./common.js";
 
 const USAGE = "Usage: pnpm backfill --repo <owner>/<name> --days <n>";
 const GITHUB_RESULT_CAP = 1000;
@@ -32,14 +25,7 @@ const RATE_LIMIT_FLOOR = 100;
 function parseFlags(argv: string[]): { owner: string; name: string; days: number } {
   const repoIndex = argv.indexOf("--repo");
   const repoValue = repoIndex === -1 ? undefined : argv[repoIndex + 1];
-  if (!repoValue) {
-    throw new Error(USAGE);
-  }
-  const parts = repoValue.split("/");
-  const [owner, name] = parts;
-  if (parts.length !== 2 || !owner || !name) {
-    throw new Error(`Expected <owner>/<name>, got "${repoValue}"`);
-  }
+  const { owner, name } = parseOwnerRepo(repoValue, USAGE);
 
   const daysIndex = argv.indexOf("--days");
   const daysValue = daysIndex === -1 ? undefined : argv[daysIndex + 1];
@@ -114,23 +100,8 @@ async function ingestRun(
 async function main() {
   const { owner, name, days } = parseFlags(process.argv.slice(2));
 
-  const [user] = await db.select().from(users).limit(1);
-  if (!user) {
-    throw new Error("No user found. Run `pnpm seed` first.");
-  }
-
-  const [watched] = await db
-    .select({ repoId: repos.id })
-    .from(watchedRepos)
-    .innerJoin(repos, eq(watchedRepos.repoId, repos.id))
-    .where(and(eq(watchedRepos.userId, user.id), eq(repos.owner, owner), eq(repos.name, name)))
-    .limit(1);
-
-  if (!watched) {
-    throw new Error(`Not watching ${owner}/${name}. Run \`pnpm add-repo ${owner}/${name}\` first.`);
-  }
-
-  const repoId = watched.repoId;
+  const user = await requireUser();
+  const repoId = await requireWatchedRepo(user.id, owner, name);
 
   let [progress] = await db
     .select()
@@ -164,8 +135,7 @@ async function main() {
   const { targetDate } = progress!;
   let cursor = progress!.cursor;
 
-  const installationId = await installationIdForRepo(owner, name);
-  const octoClient = await octokitForInstallation(installationId);
+  const octoClient = await octokitForRepo(owner, name);
 
   const storedRuns = await db
     .select({ githubRunId: ingestedRuns.githubRunId, updatedAt: ingestedRuns.updatedAt })
