@@ -4,7 +4,8 @@
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import {
-  fetchRunsWithJobs,
+  fetchJobsForRun,
+  fetchRuns,
   installationIdForRepo,
   octokitForInstallation,
   type WorkflowJob,
@@ -43,10 +44,16 @@ async function main() {
   const installationId = await installationIdForRepo(OWNER, REPO);
   const octokit = await octokitForInstallation(installationId);
 
+  const listed = await fetchRuns(OWNER, REPO, octokit, { maxNumOfRuns: MAX_RUNS });
+  if (listed.notModified) {
+    throw new Error("Got a 304 without sending an ETag — should be impossible.");
+  }
+
   const recorded: RunWithJobs[] = [];
-  for await (const runWithJobs of fetchRunsWithJobs(OWNER, REPO, octokit)) {
-    recorded.push(runWithJobs);
-    if (recorded.length >= MAX_RUNS) break;
+  for (const run of listed.runs) {
+    // eslint-disable-next-line no-await-in-loop
+    const jobs = await fetchJobsForRun(OWNER, REPO, octokit, run.id);
+    recorded.push({ run, jobs });
   }
 
   await mkdir("src/fixtures", { recursive: true });

@@ -1,11 +1,10 @@
-import { installationIdForRepo, octokitForInstallation } from "./github.js";
+import { coreRateLimit, installationIdForRepo, octokitForInstallation } from "./github.js";
 
 async function main() {
   const installationId = await installationIdForRepo("icomey8", "flaky-test");
   const octokit = await octokitForInstallation(installationId);
 
-  const { data } = await octokit.request("GET /rate_limit");
-  const core = data.resources.core;
+  const core = await coreRateLimit(octokit);
 
   console.log(`Installation ${installationId}`);
   console.log(`Core: ${core.remaining}/${core.limit} remaining`);

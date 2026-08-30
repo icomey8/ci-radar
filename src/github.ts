@@ -1,4 +1,4 @@
-import { App, type Octokit } from "octokit";
+import { App, RequestError, type Octokit } from "octokit";
 import { env } from "./env.js";
 import type { Endpoints } from "@octokit/types";
 
@@ -38,44 +38,71 @@ export async function installationIdForRepo(owner: string, repo: string): Promis
   return data.id;
 }
 
-export async function* fetchRunsWithJobs(
+export function shouldFetchJobs(run: WorkflowRun, storedUpdatedAt: Date | undefined): boolean {
+  if (!storedUpdatedAt) return true;
+  return new Date(run.updated_at).getTime() > storedUpdatedAt.getTime();
+}
+
+export type FetchRunsResult =
+  | { notModified: true }
+  | { notModified: false; runs: WorkflowRun[]; etag: string | null };
+
+export async function fetchRuns(
   owner: string,
   repo: string,
   octoClient: InstallationOctokit,
-  maxNumOfRuns = 50,
-) {
-  let runCount = 0;
+  { etag = null, maxNumOfRuns = 50 }: { etag?: string | null; maxNumOfRuns?: number } = {},
+): Promise<FetchRunsResult> {
+  const runs: WorkflowRun[] = [];
+  let firstPageEtag: string | null = null;
 
-  for await (const response of octoClient.paginate.iterator(
-    "GET /repos/{owner}/{repo}/actions/runs",
-    {
-      owner,
-      repo,
-      per_page: 100,
-    },
-  )) {
-    const workflowRuns = response.data;
-    for (const run of workflowRuns) {
-      if (runCount >= maxNumOfRuns) {
-        return;
-      }
-
-      // Sequential on purpose. GitHub asks for serial requests per installation,
-      // and firing these in parallel is what trips the secondary rate limits.
+  for (let page = 1; runs.length < maxNumOfRuns; page += 1) {
+    let response;
+    try {
       // eslint-disable-next-line no-await-in-loop
-      const jobs = await octoClient.paginate(
-        "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs",
-        {
-          owner,
-          repo,
-          run_id: run.id,
-          per_page: 100,
-          filter: "all",
-        },
-      );
-
-      runCount += 1;
-      yield { run, jobs };
+      response = await octoClient.request("GET /repos/{owner}/{repo}/actions/runs", {
+        owner,
+        repo,
+        per_page: 100,
+        page,
+        ...(page === 1 && etag ? { headers: { "if-none-match": etag } } : {}),
+      });
+    } catch (error) {
+      if (page === 1 && error instanceof RequestError && error.status === 304) {
+        return { notModified: true };
+      }
+      throw error;
     }
+
+    if (page === 1) {
+      firstPageEtag = response.headers.etag ?? null;
+    }
+
+    runs.push(...response.data.workflow_runs);
+    if (response.data.workflow_runs.length < 100) break;
   }
+
+  return { notModified: false, runs: runs.slice(0, maxNumOfRuns), etag: firstPageEtag };
+}
+
+export async function fetchJobsForRun(
+  owner: string,
+  repo: string,
+  octoClient: InstallationOctokit,
+  runId: number,
+) {
+  const jobs = await octoClient.paginate("GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs", {
+    owner,
+    repo,
+    run_id: runId,
+    per_page: 100,
+    filter: "all",
+  });
+
+  return jobs;
+}
+
+export async function coreRateLimit(octoClient: Octokit) {
+  const { data } = await octoClient.request("GET /rate_limit");
+  return data.resources.core;
 }

@@ -1,4 +1,12 @@
-import { pgTable, integer, text, timestamp, uniqueIndex, bigint } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  integer,
+  text,
+  timestamp,
+  uniqueIndex,
+  bigint,
+  primaryKey,
+} from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -47,3 +55,27 @@ export const jobAttempts = pgTable("job_attempts", {
   completedAt: timestamp("completed_at", { withTimezone: true }).notNull(),
   ingestedAt: timestamp("ingested_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const resourceValidators = pgTable(
+  "resource_validators",
+  {
+    repoId: integer("repo_id")
+      .notNull()
+      .references(() => repos.id, { onDelete: "cascade" }),
+    resource: text("resource").notNull(),
+    etag: text("etag").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.repoId, table.resource] })],
+);
+
+export const ingestedRuns = pgTable(
+  "ingested_runs",
+  {
+    repoId: integer("repo_id")
+      .notNull()
+      .references(() => repos.id, { onDelete: "cascade" }),
+    githubRunId: bigint("github_run_id", { mode: "number" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.repoId, table.githubRunId] })],
+);

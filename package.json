@@ -11,6 +11,7 @@
     "add-repo": "tsx src/add-repo.ts",
     "list-repos": "tsx src/list-repos.ts",
     "ingest": "tsx src/ingest.ts",
+    "rank": "tsx src/rank-cli.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
