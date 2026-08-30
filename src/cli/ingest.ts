@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { db, pool } from "./db.js";
+import { db, pool } from "../db.js";
 import {
   coreRateLimit,
   fetchJobsForRun,
@@ -7,9 +7,9 @@ import {
   installationIdForRepo,
   octokitForInstallation,
   shouldFetchJobs,
-} from "./github.js";
+} from "../github.js";
 import type { Octokit } from "octokit";
-import { type NewJobAttempt, toJobAttemptRow } from "./job-attempt.js";
+import { type NewJobAttempt, toJobAttemptRow } from "../job-attempt.js";
 import {
   ingestedRuns,
   jobAttempts,
@@ -17,7 +17,7 @@ import {
   resourceValidators,
   users,
   watchedRepos,
-} from "./schema.js";
+} from "../schema.js";
 
 const BATCH_SIZE = 500;
 const RUNS_LIST = "runs-list";

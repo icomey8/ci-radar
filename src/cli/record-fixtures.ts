@@ -10,7 +10,7 @@ import {
   octokitForInstallation,
   type WorkflowJob,
   type WorkflowRun,
-} from "./github.js";
+} from "../github.js";
 
 const OWNER = "icomey8";
 const REPO = "flaky-test";

@@ -5,6 +5,7 @@ import {
   timestamp,
   uniqueIndex,
   bigint,
+  boolean,
   primaryKey,
 } from "drizzle-orm/pg-core";
 
@@ -67,6 +68,16 @@ export const resourceValidators = pgTable(
   },
   (table) => [primaryKey({ columns: [table.repoId, table.resource] })],
 );
+
+export const backfillProgress = pgTable("backfill_progress", {
+  repoId: integer("repo_id")
+    .primaryKey()
+    .references(() => repos.id, { onDelete: "cascade" }),
+  targetDate: timestamp("target_date", { withTimezone: true }).notNull(),
+  cursor: timestamp("cursor", { withTimezone: true }).notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  done: boolean("done").notNull().default(false),
+});
 
 export const ingestedRuns = pgTable(
   "ingested_runs",

@@ -1,4 +1,4 @@
-import { coreRateLimit, installationIdForRepo, octokitForInstallation } from "./github.js";
+import { coreRateLimit, installationIdForRepo, octokitForInstallation } from "../github.js";
 
 async function main() {
   const installationId = await installationIdForRepo("icomey8", "flaky-test");

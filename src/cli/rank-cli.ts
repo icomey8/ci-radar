@@ -1,7 +1,7 @@
 import { and, eq, gte } from "drizzle-orm";
-import { db, pool } from "./db.js";
-import { defaultRankConfig, rank, type RankAttempt, type RankConfig } from "./rank.js";
-import { jobAttempts, repos, users, watchedRepos } from "./schema.js";
+import { db, pool } from "../db.js";
+import { defaultRankConfig, rank, type RankAttempt, type RankConfig } from "../rank.js";
+import { jobAttempts, repos, users, watchedRepos } from "../schema.js";
 
 /** All attempts for one repo inside the lookback window, in the shape `rank()` wants. */
 async function grabAttempts(
@@ -37,6 +37,7 @@ async function main() {
   }
 
   for (const repo of watched) {
+    // eslint-disable-next-line no-await-in-loop
     const attempts = await grabAttempts(repo.repoId);
     const { flaky, broken } = rank(attempts);
 

@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { RequestError, type Octokit } from "octokit";
-import { fetchRuns, shouldFetchJobs, type WorkflowJob, type WorkflowRun } from "./github.js";
+import {
+  countRuns,
+  fetchRuns,
+  shouldFetchJobs,
+  type WorkflowJob,
+  type WorkflowRun,
+} from "./github.js";
 
 type RunWithJobs = { run: WorkflowRun; jobs: WorkflowJob[] };
 
@@ -73,6 +79,66 @@ test("fetchRuns caps the runs it returns at maxNumOfRuns", async () => {
 
   assert.ok(!result.notModified);
   assert.equal(result.runs.length, 2);
+});
+
+test("fetchRuns passes a created-date range through to GitHub", async () => {
+  let sentCreated: unknown;
+  const client = fakeClient((_route, params) => {
+    sentCreated = params.created;
+    return {
+      data: { workflow_runs: runs, total_count: runs.length },
+      headers: { etag: 'W/"abc"' },
+    };
+  });
+
+  const result = await fetchRuns("icomey8", "flaky-test", client, {
+    createdRange: "2026-08-01..2026-08-15",
+  });
+
+  assert.equal(sentCreated, "2026-08-01..2026-08-15");
+  assert.ok(!result.notModified);
+});
+
+test("fetchRuns omits the created parameter when no range is given", async () => {
+  let sentCreated: unknown = "sentinel";
+  const client = fakeClient((_route, params) => {
+    sentCreated = params.created;
+    return {
+      data: { workflow_runs: runs, total_count: runs.length },
+      headers: { etag: 'W/"abc"' },
+    };
+  });
+
+  await fetchRuns("icomey8", "flaky-test", client);
+
+  assert.equal(sentCreated, undefined);
+});
+
+test("fetchRuns reports GitHub's total match count, even when capped", async () => {
+  const client = fakeClient(() => ({
+    data: { workflow_runs: runs, total_count: 4321 },
+    headers: { etag: 'W/"abc"' },
+  }));
+
+  const result = await fetchRuns("icomey8", "flaky-test", client, { maxNumOfRuns: 2 });
+
+  assert.ok(!result.notModified);
+  assert.equal(result.runs.length, 2);
+  assert.equal(result.totalCount, 4321);
+});
+
+test("countRuns fetches one run but returns the window's total count", async () => {
+  let sentParams: Record<string, unknown> = {};
+  const client = fakeClient((_route, params) => {
+    sentParams = params;
+    return { data: { workflow_runs: runs.slice(0, 1), total_count: 1500 }, headers: {} };
+  });
+
+  const count = await countRuns("icomey8", "flaky-test", client, "2026-08-01..2026-08-15");
+
+  assert.equal(count, 1500);
+  assert.equal(sentParams.per_page, 1);
+  assert.equal(sentParams.created, "2026-08-01..2026-08-15");
 });
 
 test("fetchRuns lets non-304 errors through", async () => {

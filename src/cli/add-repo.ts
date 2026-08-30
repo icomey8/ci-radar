@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
-import { db, pool } from "./db.js";
-import { repos, users, watchedRepos } from "./schema.js";
+import { db, pool } from "../db.js";
+import { repos, users, watchedRepos } from "../schema.js";
 
 function parseRepo(input: string | undefined): { owner: string; name: string } {
   if (!input) {

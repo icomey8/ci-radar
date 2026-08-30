@@ -1,5 +1,5 @@
-import { db, pool } from "./db.js";
-import { users } from "./schema.js";
+import { db, pool } from "../db.js";
+import { users } from "../schema.js";
 
 const [existing] = await db.select().from(users).limit(1);
 
