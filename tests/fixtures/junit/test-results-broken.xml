@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.057" timestamp="2026-09-06T13:57:09.996303+00:00" hostname="runnervmejwal"><testcase classname="tests.test_flaky" name="test_always_broken" time="0.001"><failure message="AssertionError: this test is broken on purpose&#10;assert False">@pytest.mark.broken
+    def test_always_broken():
+&gt;       assert False, "this test is broken on purpose"
+E       AssertionError: this test is broken on purpose
+E       assert False
+
+tests/test_flaky.py:68: AssertionError</failure></testcase></testsuite></testsuites>

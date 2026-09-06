@@ -79,6 +79,30 @@ export const backfillProgress = pgTable("backfill_progress", {
   done: boolean("done").notNull().default(false),
 });
 
+export const testResults = pgTable(
+  "test_results",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    jobAttemptId: integer("job_attempt_id")
+      .notNull()
+      .references(() => jobAttempts.id, { onDelete: "cascade" }),
+    testName: text("test_name").notNull(),
+    outcome: text("outcome").notNull(),
+    ingestedAt: timestamp("ingested_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("test_results_attempt_test_idx").on(table.jobAttemptId, table.testName)],
+);
+
+export const processedArtifacts = pgTable("processed_artifacts", {
+  githubArtifactId: bigint("github_artifact_id", { mode: "number" }).primaryKey(),
+  repoId: integer("repo_id")
+    .notNull()
+    .references(() => repos.id, { onDelete: "cascade" }),
+  githubRunId: bigint("github_run_id", { mode: "number" }).notNull(),
+  outcome: text("outcome").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const ingestedRuns = pgTable(
   "ingested_runs",
   {

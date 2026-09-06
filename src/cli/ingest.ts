@@ -10,9 +10,13 @@ import {
 import type { Octokit } from "octokit";
 import { type NewJobAttempt, toJobAttemptRow } from "../job-attempt.js";
 import { ingestedRuns, jobAttempts, resourceValidators } from "../schema.js";
+import {
+  addTestResultStats,
+  emptyTestResultStats,
+  ingestTestResultsForRun,
+} from "../test-results.js";
 import { parseOwnerRepo, requireUser, requireWatchedRepo } from "./common.js";
 
-const BATCH_SIZE = 500;
 const RUNS_LIST = "runs-list";
 
 async function printRateLimit(octoClient: Octokit) {
@@ -65,7 +69,12 @@ async function main() {
   let jobsSeen = 0;
   let unfinished = 0;
   let insertedRows = 0;
+  const testStats = emptyTestResultStats();
 
+  /**
+   * Writes everything buffered so far to the database: job rows first, then the
+   * runs they came from.
+   */
   async function flush() {
     if (buffer.length > 0) {
       const written = await db
@@ -78,16 +87,14 @@ async function main() {
       buffer.length = 0;
     }
 
-    if (fetchedRuns.length > 0) {
-      await db
-        .insert(ingestedRuns)
-        .values(fetchedRuns)
-        .onConflictDoUpdate({
-          target: [ingestedRuns.repoId, ingestedRuns.githubRunId],
-          set: { updatedAt: sql`excluded.updated_at` },
-        });
-      fetchedRuns.length = 0;
-    }
+    await db
+      .insert(ingestedRuns)
+      .values(fetchedRuns)
+      .onConflictDoUpdate({
+        target: [ingestedRuns.repoId, ingestedRuns.githubRunId],
+        set: { updatedAt: sql`excluded.updated_at` },
+      });
+    fetchedRuns.length = 0;
   }
 
   for (const run of listed.runs) {
@@ -117,13 +124,14 @@ async function main() {
       updatedAt: new Date(run.updated_at),
     });
 
-    if (buffer.length >= BATCH_SIZE) {
-      // eslint-disable-next-line no-await-in-loop
-      await flush();
-    }
-  }
+    // Artifact matching needs this run's job attempts in the database first.
+    // eslint-disable-next-line no-await-in-loop
+    await flush();
 
-  await flush();
+    // eslint-disable-next-line no-await-in-loop
+    const runStats = await ingestTestResultsForRun(owner, name, octoClient, repoId, run.id);
+    addTestResultStats(testStats, runStats);
+  }
 
   if (listed.etag) {
     await db
@@ -143,6 +151,8 @@ async function main() {
       `Rows inserted:  ${insertedRows}`,
       `Unfinished:     ${unfinished}`,
       `Already stored: ${jobsSeen - unfinished - insertedRows}`,
+      `Artifacts:      ${testStats.artifactsStored} stored, ${testStats.artifactsUnmatched} unmatched, ${testStats.artifactsExpired} expired, ${testStats.artifactsMalformed} malformed`,
+      `Tests inserted: ${testStats.testsInserted}`,
     ].join("\n"),
   );
   await printRateLimit(octoClient);

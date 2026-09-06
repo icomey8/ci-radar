@@ -1,4 +1,4 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["drizzle/**", "src/fixtures/**", "pnpm-lock.yaml"]
+  "ignorePatterns": ["drizzle/**", "tests/fixtures/**", "pnpm-lock.yaml"]
 }

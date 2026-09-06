@@ -8,7 +8,7 @@ import {
   shouldFetchJobs,
   type WorkflowJob,
   type WorkflowRun,
-} from "./github.js";
+} from "../src/github.js";
 
 type RunWithJobs = { run: WorkflowRun; jobs: WorkflowJob[] };
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { defaultRankConfig, rank, type RankAttempt } from "./rank.js";
+import { defaultRankConfig, rank, type RankAttempt } from "../src/rank.js";
 
 /** Builds `failures` failing attempts and `runs - failures` passing ones for one job. */
 function history(jobName: string, runs: number, failures: number): RankAttempt[] {

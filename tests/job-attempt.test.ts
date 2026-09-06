@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import type { WorkflowJob, WorkflowRun } from "./github.js";
-import { toJobAttemptRow } from "./job-attempt.js";
+import type { WorkflowJob, WorkflowRun } from "../src/github.js";
+import { toJobAttemptRow } from "../src/job-attempt.js";
 
 type RunWithJobs = { run: WorkflowRun; jobs: WorkflowJob[] };
 

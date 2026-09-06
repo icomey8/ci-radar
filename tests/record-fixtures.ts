@@ -1,5 +1,5 @@
 /**
- * One-off: saves real GitHub responses to src/fixtures/ so the mapper tests can
+ * One-off: saves real GitHub responses to tests/fixtures/ so the mapper tests can
  * run without network access. Re-run it only when you need fresher data.
  */
 import { mkdir, writeFile } from "node:fs/promises";
@@ -9,7 +9,7 @@ import {
   octokitForRepo,
   type WorkflowJob,
   type WorkflowRun,
-} from "../github.js";
+} from "../src/github.js";
 
 const OWNER = "icomey8";
 const REPO = "flaky-test";
@@ -54,10 +54,10 @@ async function main() {
     recorded.push({ run, jobs });
   }
 
-  await mkdir("src/fixtures", { recursive: true });
-  // oxfmt ignores src/fixtures, so this file's shape is whatever we write here.
+  await mkdir("tests/fixtures", { recursive: true });
+  // oxfmt ignores tests/fixtures, so this file's shape is whatever we write here.
   await writeFile(
-    "src/fixtures/runs-with-jobs.json",
+    "tests/fixtures/runs-with-jobs.json",
     `${JSON.stringify(scrub(recorded), null, 2)}\n`,
   );
 

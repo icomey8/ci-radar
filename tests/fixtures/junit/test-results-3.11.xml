@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="0.071" timestamp="2026-09-06T13:57:11.282780+00:00" hostname="runnervmejwal"><testcase classname="tests.test_flaky" name="test_stable_one" time="0.001" /><testcase classname="tests.test_flaky" name="test_stable_two" time="0.001" /><testcase classname="tests.test_flaky" name="test_rarely_flaky" time="0.001" /><testcase classname="tests.test_flaky" name="test_flaky" time="0.001"><failure message="AssertionError: flake fired&#10;assert not True&#10; +  where True = fails_at(0.2)">def test_flaky():
+        """~20% — the main signal. This is the one the detector must surface."""
+&gt;       assert not fails_at(0.20), "flake fired"
+E       AssertionError: flake fired
+E       assert not True
+E        +  where True = fails_at(0.2)
+
+tests/test_flaky.py:41: AssertionError</failure></testcase><testcase classname="tests.test_flaky" name="test_very_flaky" time="0.001" /><testcase classname="tests.test_flaky" name="test_flaky_on_311_only" time="0.001"><failure message="AssertionError: version-specific flake fired&#10;assert not True&#10; +  where True = fails_at(0.4)">def test_flaky_on_311_only():
+        """~40%, but only on 3.11. Everywhere else it always passes.
+    
+        This is the case that breaks if job identity ignores the version, because
+        averaging across versions dilutes it below the threshold.
+        """
+        if PYTHON_VERSION == "3.11":
+&gt;           assert not fails_at(0.40), "version-specific flake fired"
+E           AssertionError: version-specific flake fired
+E           assert not True
+E            +  where True = fails_at(0.4)
+
+tests/test_flaky.py:59: AssertionError</failure></testcase></testsuite></testsuites>

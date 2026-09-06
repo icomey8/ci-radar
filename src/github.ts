@@ -138,6 +138,37 @@ export async function fetchJobsForRun(
   return jobs;
 }
 
+export type WorkflowArtifact =
+  Endpoints["GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"]["response"]["data"]["artifacts"][number];
+
+export async function fetchArtifactsForRun(
+  owner: string,
+  repo: string,
+  octoClient: InstallationOctokit,
+  runId: number,
+): Promise<WorkflowArtifact[]> {
+  return octoClient.paginate("GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", {
+    owner,
+    repo,
+    run_id: runId,
+    per_page: 100,
+  });
+}
+
+/** The artifact's zip archive as raw bytes. Throws a 410 RequestError if it has expired. */
+export async function downloadArtifactZip(
+  owner: string,
+  repo: string,
+  octoClient: InstallationOctokit,
+  artifactId: number,
+): Promise<Uint8Array> {
+  const response = await octoClient.request(
+    "GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}",
+    { owner, repo, artifact_id: artifactId, archive_format: "zip" },
+  );
+  return new Uint8Array(response.data as ArrayBuffer);
+}
+
 export async function coreRateLimit(octoClient: Octokit) {
   const { data } = await octoClient.request("GET /rate_limit");
   return data.resources.core;
