@@ -1,24 +1,78 @@
 import { and, eq, gte } from "drizzle-orm";
 import { db, pool } from "../db.js";
-import { defaultRankConfig, rank, type RankAttempt, type RankConfig } from "../rank.js";
-import { jobAttempts, repos, watchedRepos } from "../schema.js";
+import {
+  defaultRankConfig,
+  rank,
+  type RankAttempt,
+  type RankConfig,
+  type RankedRow,
+  type RankTestResult,
+} from "../rank.js";
+import { jobAttempts, repos, testResults, watchedRepos } from "../schema.js";
 import { requireUser } from "./common.js";
 
-/** All attempts for one repo inside the lookback window, in the shape `rank()` wants. */
+/**
+ * All attempts for one repo inside the lookback window, each carrying whatever
+ * per-test results were ingested for it, in the shape `rank()` wants.
+ */
 async function grabAttempts(
   repoId: number,
   config: RankConfig = defaultRankConfig,
 ): Promise<RankAttempt[]> {
   const cutoff = new Date(Date.now() - config.daysBack * 24 * 60 * 60 * 1000);
+  const inWindow = and(eq(jobAttempts.repoId, repoId), gte(jobAttempts.startedAt, cutoff));
 
-  return db
+  const attempts = await db
     .select({
+      id: jobAttempts.id,
       workflowName: jobAttempts.workflowName,
       jobName: jobAttempts.jobName,
       conclusion: jobAttempts.conclusion,
     })
     .from(jobAttempts)
-    .where(and(eq(jobAttempts.repoId, repoId), gte(jobAttempts.startedAt, cutoff)));
+    .where(inWindow);
+
+  const results = await db
+    .select({
+      jobAttemptId: testResults.jobAttemptId,
+      name: testResults.testName,
+      outcome: testResults.outcome,
+    })
+    .from(testResults)
+    .innerJoin(jobAttempts, eq(testResults.jobAttemptId, jobAttempts.id))
+    .where(inWindow);
+
+  const testsByAttempt = new Map<number, RankTestResult[]>();
+  for (const result of results) {
+    const forAttempt = testsByAttempt.get(result.jobAttemptId);
+    if (forAttempt) {
+      forAttempt.push(result);
+    } else {
+      testsByAttempt.set(result.jobAttemptId, [result]);
+    }
+  }
+
+  const ranked: RankAttempt[] = [];
+  for (const attempt of attempts) {
+    const row: RankAttempt = {
+      workflowName: attempt.workflowName,
+      jobName: attempt.jobName,
+      conclusion: attempt.conclusion,
+    };
+
+    const tests = testsByAttempt.get(attempt.id);
+    if (tests) row.tests = tests;
+
+    ranked.push(row);
+  }
+
+  return ranked;
+}
+
+/** `ci / "test (3.11)" :: tests.test_flaky::test_flaky [test]` */
+function describe(row: RankedRow): string {
+  const job = `${row.workflowName} / "${row.jobName}"`;
+  return row.kind === "test" ? `${job} :: ${row.testName} [test]` : `${job} [job]`;
 }
 
 async function main() {
@@ -46,21 +100,17 @@ async function main() {
       continue;
     }
 
-    for (const [i, job] of flaky.entries()) {
-      const rate = ((job.failures / job.runs) * 100).toFixed(1);
+    for (const [i, row] of flaky.entries()) {
+      const rate = ((row.failures / row.runs) * 100).toFixed(1);
       console.log(
-        `  ${i + 1}. ${job.workflowName} / "${job.jobName}" — ` +
-          `${job.failures} of ${job.runs} runs failed (${rate}%)`,
+        `  ${i + 1}. ${describe(row)} — ${row.failures} of ${row.runs} runs failed (${rate}%)`,
       );
     }
 
     if (broken.length > 0) {
       console.log("  Broken (failing almost every run):");
-      for (const job of broken) {
-        console.log(
-          `    ${job.workflowName} / "${job.jobName}" — ` +
-            `${job.failures} of ${job.runs} runs failed`,
-        );
+      for (const row of broken) {
+        console.log(`    ${describe(row)} — ${row.failures} of ${row.runs} runs failed`);
       }
     }
   }
