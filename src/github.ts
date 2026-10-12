@@ -1,5 +1,5 @@
 import { App, RequestError, type Octokit } from "octokit";
-import { env } from "./env.js";
+import { requireEnv } from "./env.js";
 import type { Endpoints } from "@octokit/types";
 
 export type WorkflowRun =
@@ -10,28 +10,39 @@ export type WorkflowJob =
 type AppOctokit = Octokit;
 type InstallationOctokit = Octokit;
 
-const app = new App({
-  appId: env.githubAppId,
-  privateKey: Buffer.from(env.githubAppPrivKey, "base64").toString("utf8"),
-});
+let app: App | undefined;
+
+/**
+ * The GitHub App, built on first use so only code that talks to GitHub needs
+ * its credentials. Throws a clear "X is not set" error if they're missing.
+ */
+export function githubApp(): App {
+  app ??= new App({
+    appId: requireEnv("GITHUB_APP_ID"),
+    privateKey: Buffer.from(requireEnv("GITHUB_APP_PRIVATE_KEY"), "base64").toString("utf8"),
+  });
+  return app;
+}
 
 const clients = new Map<number, InstallationOctokit>();
 
 /** An Octokit authenticated as the App itself. Only for App-level calls. */
-export const appOctokit: AppOctokit = app.octokit;
+export function appOctokit(): AppOctokit {
+  return githubApp().octokit;
+}
 
 /** An Octokit authenticated as an installation, for reading that installation's repos. */
 export async function octokitForInstallation(installationId: number): Promise<InstallationOctokit> {
   const existing = clients.get(installationId);
   if (existing) return existing;
 
-  const client = await app.getInstallationOctokit(installationId);
+  const client = await githubApp().getInstallationOctokit(installationId);
   clients.set(installationId, client);
   return client;
 }
 
 export async function installationIdForRepo(owner: string, repo: string): Promise<number> {
-  const { data } = await appOctokit.request("GET /repos/{owner}/{repo}/installation", {
+  const { data } = await appOctokit().request("GET /repos/{owner}/{repo}/installation", {
     owner,
     repo,
   });
