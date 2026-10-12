@@ -13,6 +13,7 @@ import {
 } from "../github.js";
 import { type NewJobAttempt, toJobAttemptRow } from "../job-attempt.js";
 import { backfillProgress, ingestedRuns, jobAttempts } from "../schema.js";
+import { isoSeconds } from "../time.js";
 import type { Octokit } from "octokit";
 import { parseOwnerRepo, requireUser, requireWatchedRepo } from "./common.js";
 
@@ -36,11 +37,6 @@ function parseFlags(argv: string[]): { owner: string; name: string; days: number
   }
 
   return { owner, name, days };
-}
-
-/** GitHub's created filter wants ISO 8601 without milliseconds. */
-function isoSeconds(date: Date): string {
-  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
 function createdRange(start: Date, end: Date): string {

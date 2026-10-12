@@ -2,6 +2,31 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db.js";
 import { repos, users, watchedRepos } from "../schema.js";
 
+/** A timestamped line, for long-running processes. */
+export function log(message: string) {
+  console.log(`[${new Date().toISOString()}] ${message}`);
+}
+
+/**
+ * On the first SIGINT/SIGTERM, runs `cleanup` and exits. Later signals are
+ * ignored so cleanup (e.g. `pool.end()`) never runs twice.
+ */
+export function onShutdown(cleanup: () => Promise<void>) {
+  let shuttingDown = false;
+
+  const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+
+    log(`${signal} received — shutting down`);
+    await cleanup();
+    process.exit(0);
+  };
+
+  process.on("SIGINT", () => void shutdown("SIGINT"));
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+}
+
 export function parseOwnerRepo(
   value: string | undefined,
   usage: string,
