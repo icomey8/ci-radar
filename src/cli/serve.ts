@@ -5,6 +5,7 @@ import { env } from "../env.js";
 import { githubApp, octokitForRepo } from "../github.js";
 import { ingestRepo } from "../ingest.js";
 import { repos, watchedRepos } from "../schema.js";
+import { log, onShutdown } from "./common.js";
 
 const TICK = "tick";
 const INGEST_REPO = "ingest-repo";
@@ -12,10 +13,6 @@ const TICK_CRON = "0 * * * *";
 
 interface IngestJobData {
   repoId: number;
-}
-
-function log(message: string) {
-  console.log(`[${new Date().toISOString()}] ${message}`);
 }
 
 async function registerTickWorker(boss: PgBoss) {
@@ -89,15 +86,10 @@ async function main() {
 
   log("serving — ticking hourly over watched repos");
 
-  const shutdown = async (signal: string) => {
-    log(`${signal} received — shutting down`);
+  onShutdown(async () => {
     await boss.stop({ graceful: true });
     await pool.end();
-    process.exit(0);
-  };
-
-  process.on("SIGINT", () => void shutdown("SIGINT"));
-  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  });
 }
 
 main().catch((error: unknown) => {

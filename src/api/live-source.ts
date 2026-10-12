@@ -4,8 +4,9 @@ import { db } from "../db.js";
 import { rank } from "../rank.js";
 import { grabAttempts } from "../ranking.js";
 import { jobAttempts, repos, watchedRepos } from "../schema.js";
+import { isoSeconds } from "../time.js";
 import type { RankingSource } from "./app.js";
-import { toApiTimestamp, type RepoDto } from "./dto.js";
+import type { RepoDto } from "./dto.js";
 
 /** Answers from Postgres, ranking each repo exactly as `pnpm rank` does. */
 export const liveRankingSource: RankingSource = {
@@ -33,7 +34,7 @@ export const liveRankingSource: RankingSource = {
           id: repo.id,
           owner: repo.owner,
           name: repo.name,
-          latestDataAt: repo.latestDataAt ? toApiTimestamp(repo.latestDataAt) : null,
+          latestDataAt: repo.latestDataAt ? isoSeconds(repo.latestDataAt) : null,
           flakyCount: flaky.length,
           brokenCount: broken.length,
         };

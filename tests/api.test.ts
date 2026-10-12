@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { DrizzleQueryError } from "drizzle-orm";
 import { createApp, type RankingSource } from "../src/api/app.js";
-import { toApiTimestamp, type RepoDto } from "../src/api/dto.js";
+import type { RepoDto } from "../src/api/dto.js";
+import { isoSeconds } from "../src/time.js";
 
 const fixtures = new URL("../macos/CIRadarKit/Sources/CIRadarKit/Fixtures/", import.meta.url);
 
@@ -39,7 +40,7 @@ test("GET /repos matches the repos.json contract fixture, ordered by owner then 
         id: 2,
         owner: "icomey8",
         name: "quiet-lib",
-        latestDataAt: toApiTimestamp(new Date("2026-10-11T22:15:30.512Z")),
+        latestDataAt: isoSeconds(new Date("2026-10-11T22:15:30.512Z")),
         flakyCount: 0,
         brokenCount: 0,
       },
@@ -47,7 +48,7 @@ test("GET /repos matches the repos.json contract fixture, ordered by owner then 
         id: 1,
         owner: "icomey8",
         name: "flaky-test",
-        latestDataAt: toApiTimestamp(new Date("2026-10-12T09:41:07.004Z")),
+        latestDataAt: isoSeconds(new Date("2026-10-12T09:41:07.004Z")),
         flakyCount: 4,
         brokenCount: 1,
       },
@@ -55,7 +56,7 @@ test("GET /repos matches the repos.json contract fixture, ordered by owner then 
         id: 3,
         owner: "icomey8",
         name: "payments-service",
-        latestDataAt: toApiTimestamp(new Date("2026-10-12T08:02:55.999Z")),
+        latestDataAt: isoSeconds(new Date("2026-10-12T08:02:55.999Z")),
         flakyCount: 2,
         brokenCount: 0,
       },
@@ -132,5 +133,5 @@ test("an unknown route is a 404 in the error shape", async () => {
 });
 
 test("timestamps are ISO-8601 UTC to the second", () => {
-  assert.equal(toApiTimestamp(new Date("2026-10-12T09:41:07.004Z")), "2026-10-12T09:41:07Z");
+  assert.equal(isoSeconds(new Date("2026-10-12T09:41:07.004Z")), "2026-10-12T09:41:07Z");
 });

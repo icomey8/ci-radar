@@ -3,7 +3,7 @@ export type RepoDto = {
   id: number;
   owner: string;
   name: string;
-  /** ISO-8601 UTC; null when the repo has never been ingested. */
+  /** ISO-8601 UTC to the second; null when the repo has never been ingested. */
   latestDataAt: string | null;
   flakyCount: number;
   brokenCount: number;
@@ -13,11 +13,3 @@ export type RepoDto = {
 export type ErrorBody = {
   error: { code: string; message: string };
 };
-
-/**
- * `2026-10-12T09:41:07Z`. Whole seconds, because Swift's `.iso8601` date
- * decoding rejects fractional seconds.
- */
-export function toApiTimestamp(date: Date): string {
-  return date.toISOString().replace(/\.\d+Z$/, "Z");
-}
