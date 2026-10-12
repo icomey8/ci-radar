@@ -23,6 +23,7 @@ public final class AppStore {
     }
     do {
       let list = try await api.repos()
+      logger.info("Loaded \(list.count) repos")
       repos = .loaded(list)
       if !list.contains(where: { $0.id == selectedRepoID }) {
         selectedRepoID = list.first?.id
