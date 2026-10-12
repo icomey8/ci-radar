@@ -2,7 +2,7 @@ import { PgBoss } from "pg-boss";
 import { eq } from "drizzle-orm";
 import { db, pool } from "../db.js";
 import { env } from "../env.js";
-import { octokitForRepo } from "../github.js";
+import { githubApp, octokitForRepo } from "../github.js";
 import { ingestRepo } from "../ingest.js";
 import { repos, watchedRepos } from "../schema.js";
 
@@ -64,6 +64,9 @@ async function registerIngestWorker(boss: PgBoss) {
 }
 
 async function main() {
+  // Fail now rather than on the first hourly ingest if the App credentials are missing.
+  githubApp();
+
   const boss = new PgBoss(env.databaseUrl);
   boss.on("error", (error) => console.error(error));
 

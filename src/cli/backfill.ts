@@ -6,6 +6,7 @@ import {
   countRuns,
   fetchJobsForRun,
   fetchRuns,
+  githubApp,
   octokitForRepo,
   shouldFetchJobs,
   type WorkflowRun,
@@ -99,6 +100,7 @@ async function ingestRun(
 
 async function main() {
   const { owner, name, days } = parseFlags(process.argv.slice(2));
+  githubApp();
 
   const user = await requireUser();
   const repoId = await requireWatchedRepo(user.id, owner, name);

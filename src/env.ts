@@ -1,6 +1,7 @@
 import "dotenv/config";
 
-function required(name: string): string {
+/** The variable's value, or a clear error naming it. */
+export function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`${name} is not set. Copy .env.example to .env and fill it in.`);
@@ -9,7 +10,5 @@ function required(name: string): string {
 }
 
 export const env = {
-  databaseUrl: required("DATABASE_URL"),
-  githubAppId: required("GITHUB_APP_ID"),
-  githubAppPrivKey: required("GITHUB_APP_PRIVATE_KEY"),
+  databaseUrl: requireEnv("DATABASE_URL"),
 };

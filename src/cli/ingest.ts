@@ -1,5 +1,5 @@
 import { pool } from "../db.js";
-import { coreRateLimit, octokitForRepo } from "../github.js";
+import { coreRateLimit, githubApp, octokitForRepo } from "../github.js";
 import type { Octokit } from "octokit";
 import { ingestRepo } from "../ingest.js";
 import { parseOwnerRepo, requireUser, requireWatchedRepo } from "./common.js";
@@ -17,6 +17,7 @@ function parseRepoFlag(argv: string[]): { owner: string; name: string } {
 
 async function main() {
   const { owner, name } = parseRepoFlag(process.argv.slice(2));
+  githubApp();
 
   const user = await requireUser();
   const repoId = await requireWatchedRepo(user.id, owner, name);
