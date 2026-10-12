@@ -12,6 +12,7 @@
     "list-repos": "tsx src/list-repos.ts",
     "ingest": "tsx src/cli/ingest.ts",
     "serve": "tsx src/cli/serve.ts",
+    "api": "tsx src/cli/api.ts",
     "rank": "tsx src/cli/rank-cli.ts",
     "backfill": "tsx src/cli/backfill.ts",
     "typecheck": "tsc --noEmit",
@@ -26,11 +27,13 @@
     "test": "node --import tsx --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.4",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "fast-xml-parser": "^5.11.1",
     "fast-xml-validator": "^1.4.2",
     "fflate": "^0.8.3",
+    "hono": "^4.13.13",
     "octokit": "^5.0.5",
     "p-limit": "^7.3.1",
     "pg": "^8.23.0",

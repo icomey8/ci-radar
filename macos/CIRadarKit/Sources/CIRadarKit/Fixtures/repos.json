@@ -1,0 +1,36 @@
+{
+  "repos": [
+    {
+      "id": 1,
+      "owner": "icomey8",
+      "name": "flaky-test",
+      "latestDataAt": "2026-10-12T09:41:07Z",
+      "flakyCount": 4,
+      "brokenCount": 1
+    },
+    {
+      "id": 3,
+      "owner": "icomey8",
+      "name": "payments-service",
+      "latestDataAt": "2026-10-12T08:02:55Z",
+      "flakyCount": 2,
+      "brokenCount": 0
+    },
+    {
+      "id": 2,
+      "owner": "icomey8",
+      "name": "quiet-lib",
+      "latestDataAt": "2026-10-11T22:15:30Z",
+      "flakyCount": 0,
+      "brokenCount": 0
+    },
+    {
+      "id": 4,
+      "owner": "octo-org",
+      "name": "new-service",
+      "latestDataAt": null,
+      "flakyCount": 0,
+      "brokenCount": 0
+    }
+  ]
+}
