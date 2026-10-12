@@ -5,3 +5,7 @@ dist/
 *.pem
 
 .DS_Store
+
+macos/.build/
+.build/
+xcuserdata/
