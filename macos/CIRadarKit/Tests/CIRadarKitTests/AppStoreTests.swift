@@ -4,7 +4,11 @@ import Testing
 @testable import CIRadarKit
 
 @MainActor @Suite struct AppStoreTests {
-  let fixtureRepos = try! JSONDecoder.ciRadar().decode(ReposResponse.self, from: Fixtures.data(named: "repos.json")).repos
+  let fixtureRepos: [Repo]
+
+  init() throws {
+    fixtureRepos = try JSONDecoder.ciRadar().decode(ReposResponse.self, from: Fixtures.data(named: "repos.json")).repos
+  }
 
   @Test func firstLoadSelectsTheFirstRepo() async {
     let store = AppStore(api: StubAPI { fixtureRepos })

@@ -19,44 +19,45 @@ import Testing
 
   @Test func mapsErrorBodyToServerError() async {
     let body = #"{"error":{"code":"internal","message":"No user found. Run `pnpm seed` first."}}"#
-    let api = StubURLProtocol.api(.response(status: 500, body: Data(body.utf8)))
-    await #expect {
-      try await api.repos()
-    } throws: { error in
-      guard case .server(500, "internal", "No user found. Run `pnpm seed` first.") = error as? APIError else {
-        return false
-      }
-      return true
+    let error = await reposError(.response(status: 500, body: Data(body.utf8)))
+    guard case .server(500, "internal", "No user found. Run `pnpm seed` first.") = error else {
+      Issue.record("Unexpected \(String(describing: error))")
+      return
     }
   }
 
   @Test func mapsNonContractErrorToServerError() async {
-    let api = StubURLProtocol.api(.response(status: 502, body: Data("Bad Gateway".utf8)))
-    await #expect {
-      try await api.repos()
-    } throws: { error in
-      guard case .server(502, "unknown", _) = error as? APIError else { return false }
-      return true
+    let error = await reposError(.response(status: 502, body: Data("Bad Gateway".utf8)))
+    guard case .server(502, "unknown", _) = error else {
+      Issue.record("Unexpected \(String(describing: error))")
+      return
     }
   }
 
   @Test func mapsBadBodyToDecodingError() async {
-    let api = StubURLProtocol.api(.response(status: 200, body: Data(#"{"repos":[{"id":"one"}]}"#.utf8)))
-    await #expect {
-      try await api.repos()
-    } throws: { error in
-      guard case .decoding = error as? APIError else { return false }
-      return true
+    let error = await reposError(.response(status: 200, body: Data(#"{"repos":[{"id":"one"}]}"#.utf8)))
+    guard case .decoding = error else {
+      Issue.record("Unexpected \(String(describing: error))")
+      return
     }
   }
 
   @Test func mapsTransportFailureToUnreachable() async {
-    let api = StubURLProtocol.api(.failure(URLError(.cannotConnectToHost)))
-    await #expect {
-      try await api.repos()
-    } throws: { error in
-      guard case .unreachable(let underlying) = error as? APIError else { return false }
-      return (underlying as? URLError)?.code == .cannotConnectToHost
+    let error = await reposError(.failure(URLError(.cannotConnectToHost)))
+    guard case .unreachable(let underlying) = error else {
+      Issue.record("Unexpected \(String(describing: error))")
+      return
+    }
+    #expect((underlying as? URLError)?.code == .cannotConnectToHost)
+  }
+
+  /// The error `repos()` throws for a stubbed response, or nil if it succeeds.
+  private func reposError(_ stub: StubURLProtocol.Stub) async -> APIError? {
+    do {
+      _ = try await StubURLProtocol.api(stub).repos()
+      return nil
+    } catch {
+      return error
     }
   }
 }
