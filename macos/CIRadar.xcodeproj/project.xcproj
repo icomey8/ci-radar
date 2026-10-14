@@ -1,0 +1,29 @@
+{
+  "default-configuration": "Release",
+  "configurations": ["Debug", "Release",],
+  "localizations": { "development": "en", "supported": ["Base",], },
+  "packages": [ { "kind": "local", "path": "CIRadarKit" }, ],
+  "files": [
+    { "kind": "folder", "path": "CIRadar", "target-membership": [ "CIRadar" ],
+      "membership-exceptions": [ { "target": "CIRadar", "exclusions": [ "Info.plist" ] }, ], },
+    { "kind": "group", "name": "Products", "children": [
+        { "path": "<PRODUCTS>/CIRadar.app", "id": "A00000000000000000000001", "type": "wrapper.application", "index": false }, ], },
+  ],
+  "targets": [
+    { "name": "CIRadar", "id": "A00000000000000000000011", "product": "Products/CIRadar.app", "product-type": "application",
+      "build-phases": ["compile-sources", "frameworks", "resources",],
+      "package-product-members": [ { "package": "CIRadarKit", "product-name": "CIRadarKit", "build-phase": { "build-phase": "frameworks" } }, ],
+      "build-settings": {
+        "CODE_SIGN_ENTITLEMENTS": "CIRadar/CIRadar.entitlements", "CODE_SIGN_IDENTITY": "-", "CODE_SIGN_STYLE": "Manual",
+        "ENABLE_APP_SANDBOX": "YES", "ENABLE_HARDENED_RUNTIME": "YES", "ENABLE_PREVIEWS": "YES",
+        "GENERATE_INFOPLIST_FILE": "YES", "INFOPLIST_FILE": "CIRadar/Info.plist", "INFOPLIST_KEY_CFBundleDisplayName": "CI Radar",
+        "MACOSX_DEPLOYMENT_TARGET": "26.0", "MARKETING_VERSION": "0.1.0", "CURRENT_PROJECT_VERSION": "1",
+        "PRODUCT_BUNDLE_IDENTIFIER": "dev.ciradar.CIRadar", "PRODUCT_NAME": "$(TARGET_NAME)", "SDKROOT": "macosx",
+        "SWIFT_VERSION": "6.0", "SWIFT_DEFAULT_ACTOR_ISOLATION": "MainActor", "SWIFT_APPROACHABLE_CONCURRENCY": "YES", }, },
+  ],
+  "build-settings": {
+    "ALWAYS_SEARCH_USER_PATHS": "NO",
+    "DEBUG_INFORMATION_FORMAT[config=Debug]": "dwarf", "ENABLE_TESTABILITY[config=Debug]": "YES",
+    "ONLY_ACTIVE_ARCH[config=Debug]": "YES", "SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug]": "DEBUG $(inherited)",
+    "SWIFT_OPTIMIZATION_LEVEL[config=Debug]": "-Onone", },
+}
