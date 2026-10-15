@@ -11,7 +11,7 @@ import Testing
   }
 
   @Test func firstLoadSelectsTheFirstRepo() async {
-    let store = AppStore(api: StubAPI { fixtureRepos })
+    let store = AppStore(api: FixtureAPI(scenario: .ranking))
     #expect(store.repos.value == nil)
 
     await store.refresh()
@@ -21,7 +21,7 @@ import Testing
   }
 
   @Test func refreshKeepsASelectionThatStillExists() async {
-    let store = AppStore(api: StubAPI { fixtureRepos })
+    let store = AppStore(api: FixtureAPI(scenario: .ranking))
     await store.refresh()
     store.selectedRepoID = 2
 
@@ -31,7 +31,7 @@ import Testing
   }
 
   @Test func refreshReselectsWhenTheSelectedRepoIsGone() async {
-    let store = AppStore(api: StubAPI { fixtureRepos })
+    let store = AppStore(api: FixtureAPI(scenario: .ranking))
     await store.refresh()
     store.selectedRepoID = 99
 
@@ -41,7 +41,7 @@ import Testing
   }
 
   @Test func noReposMeansNoSelection() async {
-    let store = AppStore(api: StubAPI { [] })
+    let store = AppStore(api: FixtureAPI(scenario: .noRepos))
     await store.refresh()
 
     #expect(store.repos.value == [])
@@ -49,9 +49,7 @@ import Testing
   }
 
   @Test func failureIsSurfaced() async {
-    let store = AppStore(api: StubAPI { () throws(APIError) in
-      throw .unreachable(underlying: URLError(.cannotConnectToHost))
-    })
+    let store = AppStore(api: FixtureAPI(scenario: .unreachable))
     await store.refresh()
 
     guard case .failed(.unreachable) = store.repos else {
@@ -59,16 +57,17 @@ import Testing
       return
     }
   }
-}
 
-struct StubAPI: CIRadarAPI {
-  let onRepos: @Sendable () async throws(APIError) -> [Repo]
+  @Test func loadingScenarioStaysLoading() async throws {
+    let store = AppStore(api: FixtureAPI(scenario: .loading))
+    let refresh = Task { await store.refresh() }
+    defer { refresh.cancel() }
 
-  init(repos: @escaping @Sendable () async throws(APIError) -> [Repo]) {
-    onRepos = repos
-  }
+    try await Task.sleep(for: .milliseconds(100))
 
-  func repos() async throws(APIError) -> [Repo] {
-    try await onRepos()
+    guard case .loading = store.repos else {
+      Issue.record("Expected .loading, got \(String(describing: store.repos))")
+      return
+    }
   }
 }

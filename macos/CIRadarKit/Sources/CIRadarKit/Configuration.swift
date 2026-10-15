@@ -7,4 +7,9 @@ public enum Configuration {
   public static func apiBaseURL(from defaults: UserDefaults = .standard) -> URL {
     defaults.string(forKey: "apiBaseURL").flatMap(URL.init(string:)) ?? defaultAPIBaseURL
   }
+
+  /// The `-fixtureScenario <name>` launch argument, if given. Only DEBUG builds of the app read it (spec §7.4).
+  public static func fixtureScenarioName(from defaults: UserDefaults = .standard) -> String? {
+    defaults.string(forKey: "fixtureScenario")
+  }
 }

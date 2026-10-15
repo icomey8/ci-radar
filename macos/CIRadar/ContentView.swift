@@ -41,3 +41,16 @@ struct ContentView: View {
     }
   }
 }
+
+// FixtureAPI only exists in DEBUG builds.
+#if DEBUG
+  #Preview("Ranking") {
+    ContentView(store: AppStore(api: FixtureAPI(scenario: .ranking)), apiBaseURL: Configuration.defaultAPIBaseURL)
+      .frame(width: 760, height: 480)
+  }
+
+  #Preview("Unreachable") {
+    ContentView(store: AppStore(api: FixtureAPI(scenario: .unreachable)), apiBaseURL: Configuration.defaultAPIBaseURL)
+      .frame(width: 760, height: 480)
+  }
+#endif
