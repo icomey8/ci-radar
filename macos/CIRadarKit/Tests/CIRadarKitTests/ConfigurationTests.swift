@@ -14,4 +14,11 @@ import Testing
     defaults.set("http://localhost:9999", forKey: "apiBaseURL")
     #expect(Configuration.apiBaseURL(from: defaults) == URL(string: "http://localhost:9999"))
   }
+
+  @Test func readsTheFixtureScenarioDefault() throws {
+    let defaults = try #require(UserDefaults(suiteName: "ConfigurationTests-\(UUID())"))
+    #expect(Configuration.fixtureScenarioName(from: defaults) == nil)
+    defaults.set("no-repos", forKey: "fixtureScenario")
+    #expect(Configuration.fixtureScenarioName(from: defaults) == "no-repos")
+  }
 }
