@@ -33,6 +33,29 @@ public struct FixtureAPI: CIRadarAPI {
     }
   }
 
+  /// The ranking of a repo from `repos.json`, or the API's 404 for any other id. Each repo's
+  /// `ranking-*.json` fixture is named for the spec §6 state it shows.
+  public func ranking(repoID: Repo.ID) async throws(APIError) -> Ranking {
+    switch scenario {
+    case .ranking:
+      for name in Fixtures.names(withPrefix: "ranking-") {
+        let ranking = try fixture(name, as: Ranking.self)
+        if ranking.repo.id == repoID { return ranking }
+      }
+      throw notWatched(repoID)
+    case .noRepos:
+      throw notWatched(repoID)
+    case .loading:
+      try await neverAnswer()
+    case .unreachable:
+      throw .unreachable(underlying: URLError(.cannotConnectToHost))
+    }
+  }
+
+  private func notWatched(_ repoID: Repo.ID) -> APIError {
+    .server(status: 404, code: "repo_not_found", message: "Repo \(repoID) is not watched.")
+  }
+
   private func fixture<Body: Decodable>(_ name: String, as _: Body.Type) throws(APIError) -> Body {
     do {
       return try JSONDecoder.ciRadar().decode(Body.self, from: Fixtures.data(named: name))
