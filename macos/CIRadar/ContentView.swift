@@ -2,12 +2,13 @@ import CIRadarKit
 import SwiftUI
 
 struct ContentView: View {
-  @Bindable var store: AppStore
+  let store: AppStore
   let apiBaseURL: URL
 
   var body: some View {
     Group {
-      if case .failed(let error) = store.repos {
+      // Any failure takes over the window (spec §6).
+      if let error = store.repos.error ?? store.ranking.error {
         UnreachableView(error: error, apiBaseURL: apiBaseURL) {
           Task { await store.refresh() }
         }
@@ -25,7 +26,7 @@ struct ContentView: View {
 
   @ViewBuilder private var sidebar: some View {
     if let repos = store.repos.value {
-      List(repos, selection: $store.selectedRepoID) { repo in
+      List(repos, selection: selection) { repo in
         RepoRow(repo: repo)
       }
     } else {
@@ -34,10 +35,31 @@ struct ContentView: View {
     }
   }
 
+  /// `Task.immediate` runs `select` up to its first `await` before returning, so the selection
+  /// (and the sidebar highlight) changes on the same frame as the click; the ranking follows.
+  private var selection: Binding<Repo.ID?> {
+    Binding(
+      get: { store.selectedRepoID },
+      set: { id in Task.immediate { await store.select(id) } })
+  }
+
   @ViewBuilder private var detail: some View {
-    if let repo = store.repos.value?.first(where: { $0.id == store.selectedRepoID }) {
-      Text(repo.fullName)
-        .font(.title2.weight(.semibold))
+    Group {
+      switch store.ranking {
+      case .loaded(let ranking):
+        RankingView(ranking: ranking)
+      case .loading:
+        ProgressView("Loading…")
+      case .idle, .failed:
+        Color.clear
+      }
+    }
+    .toolbar {
+      Button("Refresh", systemImage: "arrow.clockwise") {
+        Task { await store.refresh() }
+      }
+      .keyboardShortcut("r")
+      .help("Refresh")
     }
   }
 }

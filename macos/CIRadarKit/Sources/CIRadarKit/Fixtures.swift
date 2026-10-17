@@ -8,4 +8,10 @@ enum Fixtures {
     }
     return try Data(contentsOf: url)
   }
+
+  /// The names of every fixture starting with `prefix`, sorted.
+  static func names(withPrefix prefix: String) -> [String] {
+    let urls = Bundle.module.urls(forResourcesWithExtension: "json", subdirectory: "Fixtures") ?? []
+    return urls.map(\.lastPathComponent).filter { $0.hasPrefix(prefix) }.sorted()
+  }
 }

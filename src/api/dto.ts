@@ -13,3 +13,25 @@ export type RepoDto = {
 export type ErrorBody = {
   error: { code: string; message: string };
 };
+
+/** One ranked job or test, as `rank()` produced it (spec §3.3). */
+export type RowDto = {
+  kind: "job" | "test";
+  workflowName: string;
+  jobName: string;
+  /** Explicit null on job rows. */
+  testName: string | null;
+  failures: number;
+  runs: number;
+};
+
+/** The body of `GET /repos/:id/ranking`; `flaky` and `broken` keep `rank()`'s order. */
+export type RankingDto = {
+  repo: RepoDto;
+  daysBack: number;
+  flaky: RowDto[];
+  broken: RowDto[];
+};
+
+/** A repo before ranking fills in its counts. */
+export type UnrankedRepo = Omit<RepoDto, "flakyCount" | "brokenCount">;

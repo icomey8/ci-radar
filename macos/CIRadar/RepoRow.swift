@@ -26,11 +26,11 @@ struct RepoRow: View {
       switch repo.status {
       case .broken:
         Image(systemName: "xmark.octagon.fill")
-          .foregroundStyle(.red)
+          .foregroundStyle(RepoStatus.broken.tint)
           .help("Broken jobs or tests")
       case .flaky:
         Image(systemName: "exclamationmark.triangle.fill")
-          .foregroundStyle(.orange)
+          .foregroundStyle(RepoStatus.flaky.tint)
           .help("Flaky jobs or tests")
       case nil:
         EmptyView()

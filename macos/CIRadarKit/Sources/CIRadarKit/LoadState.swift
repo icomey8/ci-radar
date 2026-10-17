@@ -9,4 +9,9 @@ public enum LoadState<T> {
     if case .loaded(let value) = self { return value }
     return nil
   }
+
+  public var error: APIError? {
+    if case .failed(let error) = self { return error }
+    return nil
+  }
 }

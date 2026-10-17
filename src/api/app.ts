@@ -1,11 +1,23 @@
 import { DrizzleQueryError } from "drizzle-orm";
 import { Hono } from "hono";
-import type { ErrorBody, RepoDto } from "./dto.js";
+import type { ErrorBody, RankingDto, RepoDto } from "./dto.js";
 
 /** Where the API's data comes from: Postgres in `pnpm api`, an in-memory fake in tests. */
 export interface RankingSource {
   /** The seeded user's watched repos, in any order. */
   listRepos(): Promise<RepoDto[]>;
+  /** One watched repo's ranking; null when the user doesn't watch a repo with this id. */
+  ranking(repoId: number): Promise<RankingDto | null>;
+}
+
+/** `repos.id` is a Postgres `integer`; anything past this can't name a repo. */
+const MAX_REPO_ID = 2_147_483_647;
+
+/** The repo id in a path segment, or null if it can't be one. */
+function parseRepoId(raw: string): number | null {
+  if (!/^\d+$/.test(raw)) return null;
+  const id = Number(raw);
+  return id <= MAX_REPO_ID ? id : null;
 }
 
 function errorBody(code: string, message: string): ErrorBody {
@@ -37,6 +49,16 @@ export function createApp(source: RankingSource) {
   app.get("/repos", async (c) => {
     const repos = await source.listRepos();
     return c.json({ repos: repos.toSorted(byOwnerThenName) });
+  });
+
+  app.get("/repos/:id/ranking", async (c) => {
+    const raw = c.req.param("id");
+    const repoId = parseRepoId(raw);
+    const ranking = repoId === null ? null : await source.ranking(repoId);
+    if (!ranking) {
+      return c.json(errorBody("repo_not_found", `Repo ${raw} is not watched.`), 404);
+    }
+    return c.json(ranking);
   });
 
   app.notFound((c) =>
