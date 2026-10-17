@@ -3,6 +3,7 @@ import Foundation
 /// The CI Radar HTTP API, as the app sees it.
 public protocol CIRadarAPI: Sendable {
   func repos() async throws(APIError) -> [Repo]
+  func ranking(repoID: Repo.ID) async throws(APIError) -> Ranking
 }
 
 /// Talks to a running `pnpm api` over HTTP.
@@ -17,6 +18,10 @@ public struct LiveAPI: CIRadarAPI {
 
   public func repos() async throws(APIError) -> [Repo] {
     try await get("repos", as: ReposResponse.self).repos
+  }
+
+  public func ranking(repoID: Repo.ID) async throws(APIError) -> Ranking {
+    try await get("repos/\(repoID)/ranking", as: Ranking.self)
   }
 
   private func get<Body: Decodable>(_ path: String, as _: Body.Type) async throws(APIError) -> Body {

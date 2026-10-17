@@ -1,0 +1,13 @@
+{
+  "repo": {
+    "id": 2,
+    "owner": "icomey8",
+    "name": "quiet-lib",
+    "latestDataAt": "2026-10-11T22:15:30Z",
+    "flakyCount": 0,
+    "brokenCount": 0
+  },
+  "daysBack": 14,
+  "flaky": [],
+  "broken": []
+}
