@@ -1,0 +1,30 @@
+{
+  "repo": {
+    "id": 3,
+    "owner": "icomey8",
+    "name": "payments-service",
+    "latestDataAt": "2026-10-12T08:02:55Z",
+    "flakyCount": 2,
+    "brokenCount": 0
+  },
+  "daysBack": 14,
+  "flaky": [
+    {
+      "kind": "job",
+      "workflowName": "ci",
+      "jobName": "integration (postgres)",
+      "testName": null,
+      "failures": 5,
+      "runs": 40
+    },
+    {
+      "kind": "test",
+      "workflowName": "ci",
+      "jobName": "unit",
+      "testName": "tests/test_refunds.py::test_partial_refund_rounding",
+      "failures": 3,
+      "runs": 52
+    }
+  ],
+  "broken": []
+}

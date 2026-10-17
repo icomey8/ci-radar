@@ -1,0 +1,55 @@
+{
+  "repo": {
+    "id": 1,
+    "owner": "icomey8",
+    "name": "flaky-test",
+    "latestDataAt": "2026-10-12T09:41:07Z",
+    "flakyCount": 4,
+    "brokenCount": 1
+  },
+  "daysBack": 14,
+  "flaky": [
+    {
+      "kind": "test",
+      "workflowName": "ci",
+      "jobName": "test (3.11)",
+      "testName": "tests.test_net::test_retry_timeout",
+      "failures": 9,
+      "runs": 48
+    },
+    {
+      "kind": "job",
+      "workflowName": "e2e",
+      "jobName": "playwright (chromium)",
+      "testName": null,
+      "failures": 6,
+      "runs": 31
+    },
+    {
+      "kind": "test",
+      "workflowName": "ci",
+      "jobName": "test (3.12)",
+      "testName": "tests/integration/test_webhooks.py::TestStripeSignature::test_rejects_replayed_events_outside_the_tolerance_window",
+      "failures": 4,
+      "runs": 47
+    },
+    {
+      "kind": "test",
+      "workflowName": "ci",
+      "jobName": "test (3.12)",
+      "testName": "tests.test_cache::test_eviction_order",
+      "failures": 3,
+      "runs": 47
+    }
+  ],
+  "broken": [
+    {
+      "kind": "job",
+      "workflowName": "release",
+      "jobName": "publish-docs",
+      "testName": null,
+      "failures": 19,
+      "runs": 20
+    }
+  ]
+}
