@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "repo_not_found",
+    "message": "Repo 42 is not watched."
+  }
+}

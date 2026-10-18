@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "internal",
+    "message": "No user found. Run `pnpm seed` first."
+  }
+}
