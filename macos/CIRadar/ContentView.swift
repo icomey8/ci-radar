@@ -1,3 +1,4 @@
+import AppKit
 import CIRadarKit
 import SwiftUI
 
@@ -21,7 +22,12 @@ struct ContentView: View {
         }
       }
     }
+    // Refresh on launch and whenever the user comes back to the app (spec §5.4); overlapping
+    // refreshes are dropped by the store.
     .task { await store.refresh() }
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+      Task { await store.refresh() }
+    }
   }
 
   @ViewBuilder private var sidebar: some View {
@@ -30,10 +36,20 @@ struct ContentView: View {
         RepoRow(repo: repo)
       }
     } else {
-      ProgressView()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+      // First load: rows shaped like the real ones, redacted.
+      List(Self.placeholderRepos) { repo in
+        RepoRow(repo: repo)
+      }
+      .redacted(reason: .placeholder)
+      .disabled(true)
     }
   }
+
+  private static let placeholderRepos = [
+    Repo(id: -1, owner: "owner", name: "repository", latestDataAt: .now, flakyCount: 0, brokenCount: 0),
+    Repo(id: -2, owner: "owner", name: "other-repo", latestDataAt: .now, flakyCount: 0, brokenCount: 0),
+    Repo(id: -3, owner: "owner", name: "service", latestDataAt: .now, flakyCount: 0, brokenCount: 0),
+  ]
 
   /// `Task.immediate` runs `select` up to its first `await` before returning, so the selection
   /// (and the sidebar highlight) changes on the same frame as the click; the ranking follows.
@@ -45,16 +61,28 @@ struct ContentView: View {
 
   @ViewBuilder private var detail: some View {
     Group {
-      switch store.ranking {
-      case .loaded(let ranking):
-        RankingView(ranking: ranking)
-      case .loading:
-        ProgressView("Loading…")
-      case .idle, .failed:
-        Color.clear
+      if store.repos.value?.isEmpty == true {
+        NoReposView {
+          Task { await store.refresh() }
+        }
+      } else {
+        switch (store.repos, store.ranking) {
+        case (_, .loaded(let ranking)):
+          RankingView(ranking: ranking)
+        case (.loading, _), (_, .loading):
+          ProgressView("Loading…")
+        default:
+          Color.clear
+        }
       }
     }
     .toolbar {
+      // A refresh over data already on screen shows here; the first load fills the window instead.
+      if store.isRefreshing && store.repos.value != nil {
+        ProgressView()
+          .controlSize(.small)
+          .help("Refreshing")
+      }
       Button("Refresh", systemImage: "arrow.clockwise") {
         Task { await store.refresh() }
       }
@@ -68,6 +96,16 @@ struct ContentView: View {
 #if DEBUG
   #Preview("Ranking") {
     ContentView(store: AppStore(api: FixtureAPI(scenario: .ranking)), apiBaseURL: Configuration.defaultAPIBaseURL)
+      .frame(width: 760, height: 480)
+  }
+
+  #Preview("Loading") {
+    ContentView(store: AppStore(api: FixtureAPI(scenario: .loading)), apiBaseURL: Configuration.defaultAPIBaseURL)
+      .frame(width: 760, height: 480)
+  }
+
+  #Preview("No repos") {
+    ContentView(store: AppStore(api: FixtureAPI(scenario: .noRepos)), apiBaseURL: Configuration.defaultAPIBaseURL)
       .frame(width: 760, height: 480)
   }
 

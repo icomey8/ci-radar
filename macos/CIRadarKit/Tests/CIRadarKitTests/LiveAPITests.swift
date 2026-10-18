@@ -24,9 +24,8 @@ import Testing
     #expect(ranking.repo.id == 1)
   }
 
-  @Test func mapsRepoNotFoundToServerError() async {
-    let body = #"{"error":{"code":"repo_not_found","message":"Repo 42 is not watched."}}"#
-    let api = StubURLProtocol.api(.response(status: 404, body: Data(body.utf8)))
+  @Test func mapsRepoNotFoundToServerError() async throws {
+    let api = StubURLProtocol.api(.response(status: 404, body: try Fixtures.data(named: "error-repo-not-found.json")))
     do {
       _ = try await api.ranking(repoID: 42)
       Issue.record("Expected a 404")
@@ -38,9 +37,8 @@ import Testing
     }
   }
 
-  @Test func mapsErrorBodyToServerError() async {
-    let body = #"{"error":{"code":"internal","message":"No user found. Run `pnpm seed` first."}}"#
-    let error = await reposError(.response(status: 500, body: Data(body.utf8)))
+  @Test func mapsErrorBodyToServerError() async throws {
+    let error = await reposError(.response(status: 500, body: try Fixtures.data(named: "error-internal.json")))
     guard case .server(500, "internal", "No user found. Run `pnpm seed` first.") = error else {
       Issue.record("Unexpected \(String(describing: error))")
       return

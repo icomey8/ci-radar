@@ -26,6 +26,24 @@ import Testing
     #expect(ranking.broken.count == ranking.repo.brokenCount)
   }
 
+  @Test func decodesEmptyReposFixture() throws {
+    let response = try JSONDecoder.ciRadar().decode(ReposResponse.self, from: Fixtures.data(named: "repos-empty.json"))
+    #expect(response.repos.isEmpty)
+  }
+
+  @Test(arguments: Fixtures.names(withPrefix: "error-"))
+  func decodesErrorFixture(_ name: String) throws {
+    let body = try JSONDecoder.ciRadar().decode(ErrorBody.self, from: Fixtures.data(named: name))
+    #expect(!body.error.code.isEmpty)
+    #expect(!body.error.message.isEmpty)
+  }
+
+  @Test func everyFixtureIsDecodedByATest() {
+    let decoded = Set(
+      ["repos.json", "repos-empty.json"] + Fixtures.names(withPrefix: "ranking-") + Fixtures.names(withPrefix: "error-"))
+    #expect(Set(Fixtures.names(withPrefix: "")) == decoded)
+  }
+
   @Test func decodesRankingRowsInTheirOrder() throws {
     let ranking = try JSONDecoder.ciRadar().decode(Ranking.self, from: Fixtures.data(named: "ranking-ranking.json"))
 

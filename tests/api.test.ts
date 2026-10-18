@@ -171,6 +171,13 @@ test("ranking rows keep the source's order and send job rows' testName as null",
   assert.deepEqual(await response.json(), ranking);
 });
 
+test("an unknown repo's ranking matches the error-repo-not-found.json contract fixture", async () => {
+  const response = await createApp(fakeSource([], scenarioRankings)).request("/repos/42/ranking");
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), await fixture("error-repo-not-found.json"));
+});
+
 for (const [why, id] of [
   ["an unknown id", "99"],
   ["a non-numeric id", "abc"],
@@ -214,23 +221,21 @@ test("a failing ranking is a 500 internal", async (t) => {
   });
 });
 
-test("GET /repos with nothing watched returns an empty list", async () => {
+test("GET /repos with nothing watched matches the repos-empty.json contract fixture", async () => {
   const response = await createApp(fakeSource([])).request("/repos");
 
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { repos: [] });
+  assert.deepEqual(await response.json(), await fixture("repos-empty.json"));
 });
 
-test("an unseeded database is a 500 internal carrying the seed hint", async (t) => {
+test("an unseeded database is a 500 matching the error-internal.json contract fixture", async (t) => {
   t.mock.method(console, "error", () => {});
   const app = createApp(failingSource(new Error("No user found. Run `pnpm seed` first.")));
 
   const response = await app.request("/repos");
 
   assert.equal(response.status, 500);
-  assert.deepEqual(await response.json(), {
-    error: { code: "internal", message: "No user found. Run `pnpm seed` first." },
-  });
+  assert.deepEqual(await response.json(), await fixture("error-internal.json"));
 });
 
 test("Postgres being down is a 500 internal naming the refused connection", async (t) => {
