@@ -13,6 +13,7 @@
     "ingest": "tsx src/cli/ingest.ts",
     "serve": "tsx src/cli/serve.ts",
     "api": "tsx src/cli/api.ts",
+    "dev": "tsx src/cli/dev.ts",
     "rank": "tsx src/cli/rank-cli.ts",
     "backfill": "tsx src/cli/backfill.ts",
     "typecheck": "tsc --noEmit",
