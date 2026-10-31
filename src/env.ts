@@ -9,6 +9,20 @@ export function requireEnv(name: string): string {
   return value;
 }
 
+/** The variables holding the GitHub App's credentials. */
+export const GITHUB_APP_VARS = {
+  appId: "GITHUB_APP_ID",
+  privateKey: "GITHUB_APP_PRIVATE_KEY",
+};
+
+/** The GitHub App variables `vars` lacks; empty counts as unset, as in `requireEnv`. */
+export function missingGithubCredentials(vars: NodeJS.ProcessEnv): string[] {
+  return Object.values(GITHUB_APP_VARS).filter((name) => !vars[name]);
+}
+
 export const env = {
-  databaseUrl: requireEnv("DATABASE_URL"),
+  // Read on use, so `pnpm dev` can import this without needing a database itself.
+  get databaseUrl() {
+    return requireEnv("DATABASE_URL");
+  },
 };

@@ -1,5 +1,5 @@
 import { App, RequestError, type Octokit } from "octokit";
-import { requireEnv } from "./env.js";
+import { GITHUB_APP_VARS, requireEnv } from "./env.js";
 import type { Endpoints } from "@octokit/types";
 
 export type WorkflowRun =
@@ -18,8 +18,8 @@ let app: App | undefined;
  */
 export function githubApp(): App {
   app ??= new App({
-    appId: requireEnv("GITHUB_APP_ID"),
-    privateKey: Buffer.from(requireEnv("GITHUB_APP_PRIVATE_KEY"), "base64").toString("utf8"),
+    appId: requireEnv(GITHUB_APP_VARS.appId),
+    privateKey: Buffer.from(requireEnv(GITHUB_APP_VARS.privateKey), "base64").toString("utf8"),
   });
   return app;
 }
