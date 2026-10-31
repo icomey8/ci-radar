@@ -1,13 +1,32 @@
 name: check
 
+# Everything but `macos/**`, plus the fixtures the contract tests read. Order matters: a later
+# pattern overrides an earlier one, and `paths-ignore` can't express the exception.
 on:
   push:
     branches: [main]
+    paths: &paths
+      - "**"
+      - "!macos/**"
+      - "macos/CIRadarKit/Sources/CIRadarKit/Fixtures/**"
   pull_request:
+    paths: *paths
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: local
+          POSTGRES_DB: ci_radar_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ci_radar_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -27,3 +46,9 @@ jobs:
       - run: pnpm run lint
 
       - run: pnpm run typecheck
+
+      - run: pnpm test
+        env:
+          # Only needs to be set: `db.ts` requires it at import, and only the DB test connects.
+          DATABASE_URL: postgres://postgres:local@localhost:5432/unused
+          TEST_DATABASE_URL: postgres://postgres:local@localhost:5432/ci_radar_test

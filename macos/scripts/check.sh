@@ -1,5 +1,5 @@
 #!/bin/sh
-# Tests the CIRadarKit package, then builds the app (spec §4.5).
+# Tests the CIRadarKit package, then builds the app (spec §4.5). CI runs this too (macos.yml).
 set -eu
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"
 cd "$(dirname "$0")/.."
