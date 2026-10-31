@@ -1,0 +1,17 @@
+name: macos
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "macos/**"
+  pull_request:
+    paths: *paths
+
+jobs:
+  check:
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: macos/scripts/check.sh
