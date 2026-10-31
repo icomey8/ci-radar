@@ -18,10 +18,10 @@ struct RankingRow: View {
       }
     }
 
-    var numberLabel: String {
+    var number: Int? {
       switch self {
-      case .flaky(let number): "\(number)."
-      case .broken: ""
+      case .flaky(let number): number
+      case .broken: nil
       }
     }
   }
@@ -31,28 +31,32 @@ struct RankingRow: View {
 
   var body: some View {
     HStack(alignment: .firstTextBaseline, spacing: 10) {
-      // Broken rows keep the empty gutter so every name lines up.
-      Text(placement.numberLabel)
-        .font(.callout)
-        .monospacedDigit()
-        .foregroundStyle(.secondary)
-        .frame(width: 24, alignment: .trailing)
+      if let number = placement.number {
+        Text(verbatim: "\(number).")
+          .font(.callout)
+          .monospacedDigit()
+          .foregroundStyle(.secondary)
+          .frame(width: 24, alignment: .trailing)
+      }
 
       VStack(alignment: .leading, spacing: 2) {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-          Text(row.name)
-            .font(.callout.weight(.medium))
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .help(row.name)
-          KindTag(kind: row.kind)
-        }
-        Text(row.location)
-          .font(.caption)
-          .foregroundStyle(.secondary)
+        Text(row.name)
+          .font(.callout.weight(.medium))
           .lineLimit(1)
           .truncationMode(.middle)
-          .help(row.location)
+          .help(row.name)
+        // The kind stays put; only a long location truncates.
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+          Text(verbatim: "\(row.kind.label) ·")
+            .fontWeight(.medium)
+            .fixedSize()
+          Text(row.location)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .help(row.location)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
       }
 
       Spacer(minLength: 16)
@@ -75,21 +79,6 @@ struct RankingRow: View {
         NSPasteboard.general.setString(row.name, forType: .string)
       }
     }
-  }
-}
-
-/// TEST or JOB, as a small capsule beside the name.
-private struct KindTag: View {
-  let kind: RankedRow.Kind
-
-  var body: some View {
-    Text(kind.label)
-      .font(.caption2.weight(.semibold))
-      .foregroundStyle(.secondary)
-      .padding(.horizontal, 6)
-      .padding(.vertical, 1)
-      .background(.quaternary, in: .capsule)
-      .fixedSize()
   }
 }
 

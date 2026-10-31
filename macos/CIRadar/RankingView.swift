@@ -18,6 +18,8 @@ struct RankingView: View {
     }
     .listStyle(.inset)
     .alternatingRowBackgrounds(.disabled)
+    .scrollContentBackground(.hidden)
+    .background { StatusWash(status: ranking.repo.status) }
     // Centred in the whole pane, under the header.
     .overlay {
       if ranking.repo.latestDataAt == nil {
