@@ -13,6 +13,7 @@ struct ContentView: View {
         UnreachableView(error: error, apiBaseURL: apiBaseURL) {
           Task { await store.refresh() }
         }
+        .background(Color.paneBackground)
       } else {
         NavigationSplitView {
           sidebar
@@ -76,6 +77,8 @@ struct ContentView: View {
         }
       }
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.paneBackground)
     .toolbar {
       // A refresh over data already on screen shows here; the first load fills the window instead.
       if store.isRefreshing && store.repos.value != nil {
